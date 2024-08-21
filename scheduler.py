@@ -13,7 +13,15 @@ dataset = {
         {"Course": "1009", "RoomsRequested": {"Type": "Large"}, "Teacher": "T9"},
         {"Course": "1010", "RoomsRequested": {"Type": "Small"}, "Teacher": "T10"},
         {"Course": "1011", "RoomsRequested": {"Type": "Medium"}, "Teacher": "T11"},
-        {"Course": "1012", "RoomsRequested": {"Type": "Large"}, "Teacher": "T12"}
+        {"Course": "1012", "RoomsRequested": {"Type": "Large"}, "Teacher": "T12"},
+        {"Course": "1013", "RoomsRequested": {"Type": "Small"}, "Teacher": "T13"},
+        {"Course": "1014", "RoomsRequested": {"Type": "Medium"}, "Teacher": "T14"},
+        {"Course": "1015", "RoomsRequested": {"Type": "Large"}, "Teacher": "T15"},
+        {"Course": "1016", "RoomsRequested": {"Type": "Small"}, "Teacher": "T16"},
+        {"Course": "1017", "RoomsRequested": {"Type": "Medium"}, "Teacher": "T17"},
+        {"Course": "1018", "RoomsRequested": {"Type": "Large"}, "Teacher": "T18"},
+        {"Course": "1019", "RoomsRequested": {"Type": "Small"}, "Teacher": "T19"},
+        {"Course": "1020", "RoomsRequested": {"Type": "Medium"}, "Teacher": "T20"}
     ],
     "Periods": 20,
     "Rooms": [
@@ -28,19 +36,21 @@ dataset = {
         {"Room": "R9", "Type": "Large"},
         {"Room": "R10", "Type": "Small"}
     ],
-    "Teachers": ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"]
+    "Teachers": [
+        "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10",
+        "T11", "T12", "T13", "T14", "T15", "T16", "T17", "T18", "T19", "T20"
+    ]
 }
 
 def is_valid_assignment(schedule, course, room, period):
     if course["RoomsRequested"]["Type"] != room["Type"]:
         return False
-    # Check if the room is already assigned in the same period
     for assigned_course, assigned_room, assigned_period in schedule:
-        if assigned_period == period and assigned_room == room["Room"]:
+        if assigned_period == period and assigned_room["Room"] == room["Room"]:
+            print(f"Invalid Assignment: Room {room['Room']} is already occupied at period {period}.")
             return False
+    
     return True
-
-
 
 def backtracking_scheduler(courses, rooms, periods, schedule=[]):
     if len(schedule) == len(courses):
@@ -59,13 +69,9 @@ def backtracking_scheduler(courses, rooms, periods, schedule=[]):
     
     return None
 
-
-
 def greedy_scheduler(courses, rooms, periods):
     schedule = []
     course_assignments = {course["Course"]: False for course in courses}
-    room_occupancy = {room["Room"]: [-1] * periods for room in rooms}
-    teacher_schedule = {teacher: [-1] * periods for teacher in dataset["Teachers"]}
     
     for period in range(periods):
         for room in rooms:
@@ -74,8 +80,6 @@ def greedy_scheduler(courses, rooms, periods):
                 if is_valid_assignment(schedule, course, room, period):
                     schedule.append((course, room, period))
                     course_assignments[course["Course"]] = True
-                    room_occupancy[room["Room"]][period] = course["Course"]
-                    teacher_schedule[course["Teacher"]][period] = course["Course"]
                     break
             else:
                 continue
@@ -95,13 +99,11 @@ def schedule_to_json(schedule):
         })
     return result
 
-# Find exact schedule
 exact_schedule = backtracking_scheduler(dataset["Courses"], dataset["Rooms"], dataset["Periods"])
 exact_schedule_json = schedule_to_json(exact_schedule) if exact_schedule else {"Assignments": []}
 
 print("Exato:", json.dumps(exact_schedule_json, indent=2))
 
-# Find approximate schedule
 approximate_schedule = greedy_scheduler(dataset["Courses"], dataset["Rooms"], dataset["Periods"])
 approximate_schedule_json = schedule_to_json(approximate_schedule)
 
