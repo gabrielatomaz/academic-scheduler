@@ -2,44 +2,15 @@ import json
 
 dataset = {
     "Courses": [
-        {"Course": "1001", "RoomsRequested": {"Type": "Small"}, "Teacher": "T1"},
-        {"Course": "1002", "RoomsRequested": {"Type": "Medium"}, "Teacher": "T2"},
-        {"Course": "1003", "RoomsRequested": {"Type": "Large"}, "Teacher": "T3"},
-        {"Course": "1004", "RoomsRequested": {"Type": "Small"}, "Teacher": "T4"},
-        {"Course": "1005", "RoomsRequested": {"Type": "Medium"}, "Teacher": "T5"},
-        {"Course": "1006", "RoomsRequested": {"Type": "Large"}, "Teacher": "T6"},
-        {"Course": "1007", "RoomsRequested": {"Type": "Small"}, "Teacher": "T7"},
-        {"Course": "1008", "RoomsRequested": {"Type": "Medium"}, "Teacher": "T8"},
-        {"Course": "1009", "RoomsRequested": {"Type": "Large"}, "Teacher": "T9"},
-        {"Course": "1010", "RoomsRequested": {"Type": "Small"}, "Teacher": "T10"},
-        {"Course": "1011", "RoomsRequested": {"Type": "Medium"}, "Teacher": "T11"},
-        {"Course": "1012", "RoomsRequested": {"Type": "Large"}, "Teacher": "T12"},
-        {"Course": "1013", "RoomsRequested": {"Type": "Small"}, "Teacher": "T13"},
-        {"Course": "1014", "RoomsRequested": {"Type": "Medium"}, "Teacher": "T14"},
-        {"Course": "1015", "RoomsRequested": {"Type": "Large"}, "Teacher": "T15"},
-        {"Course": "1016", "RoomsRequested": {"Type": "Small"}, "Teacher": "T16"},
-        {"Course": "1017", "RoomsRequested": {"Type": "Medium"}, "Teacher": "T17"},
-        {"Course": "1018", "RoomsRequested": {"Type": "Large"}, "Teacher": "T18"},
-        {"Course": "1019", "RoomsRequested": {"Type": "Small"}, "Teacher": "T19"},
-        {"Course": "1020", "RoomsRequested": {"Type": "Medium"}, "Teacher": "T20"}
+        {"Course": f"100{i}", "RoomsRequested": {"Type": "Small" if i % 3 == 0 else "Medium" if i % 3 == 1 else "Large"}, "Teacher": f"T{i}"}
+        for i in range(1, 401)
     ],
     "Periods": 20,
     "Rooms": [
-        {"Room": "R1", "Type": "Small"},
-        {"Room": "R2", "Type": "Medium"},
-        {"Room": "R3", "Type": "Large"},
-        {"Room": "R4", "Type": "Small"},
-        {"Room": "R5", "Type": "Medium"},
-        {"Room": "R6", "Type": "Large"},
-        {"Room": "R7", "Type": "Small"},
-        {"Room": "R8", "Type": "Medium"},
-        {"Room": "R9", "Type": "Large"},
-        {"Room": "R10", "Type": "Small"}
+        {"Room": f"R{i}", "Type": "Small" if i % 3 == 0 else "Medium" if i % 3 == 1 else "Large"}
+        for i in range(1, 21)
     ],
-    "Teachers": [
-        "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10",
-        "T11", "T12", "T13", "T14", "T15", "T16", "T17", "T18", "T19", "T20"
-    ]
+    "Teachers": [f"T{i}" for i in range(1, 401)]
 }
 
 def is_valid_assignment(schedule, course, room, period):
@@ -47,9 +18,8 @@ def is_valid_assignment(schedule, course, room, period):
         return False
     for assigned_course, assigned_room, assigned_period in schedule:
         if assigned_period == period and assigned_room["Room"] == room["Room"]:
-            print(f"Invalid Assignment: Room {room['Room']} is already occupied at period {period}.")
+            print(f"Invalid Assignment for {assigned_course['Course']}: Room {room['Room']} is already occupied at period {period}.")
             return False
-    
     return True
 
 def backtracking_scheduler(courses, rooms, periods, schedule=[]):
