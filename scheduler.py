@@ -2,9 +2,8 @@ import json
 import time
 
 periods = 20
-rooms = 100
-unscheduled_courses_count = 0
-max_courses = periods * rooms
+rooms = 50
+unscheduled_courses_count = 10
 
 room_types = ["Small", "Medium", "Large"]
 
@@ -21,7 +20,7 @@ course_list = []
 course_id = 1
 
 for room_type in room_types:
-    for _ in range((room_count_by_type[room_type] * periods) + unscheduled_courses_count):
+    for _ in range(room_count_by_type[room_type] * periods):
         course_list.append({
             "Course": f"100{course_id}",
             "RoomsRequested": {"Type": room_type},
@@ -29,11 +28,19 @@ for room_type in room_types:
         })
         course_id += 1
 
+for _ in range(unscheduled_courses_count):
+    course_list.append({
+        "Course": f"100{course_id}",
+        "RoomsRequested": {"Type": "Medium"},  
+        "Teacher": f"T{course_id}"
+    })
+    course_id += 1
+
 dataset = {
     "Courses": course_list,
     "Periods": periods,
     "Rooms": room_list,
-    "Teachers": [f"T{i+1}" for i in range(max_courses)]
+    "Teachers": [f"T{i+1}" for i in range(len(course_list))]
 }
 
 def is_valid_assignment(schedule, course, room, period):
@@ -70,7 +77,11 @@ def iterative_backtracking_scheduler(courses, rooms, periods):
     return schedule, unscheduled
 
 def schedule_to_json(schedule, unscheduled):
-    result = {"Assignments": []}
+    result = {
+        "Assignments": [],
+        "TotalCoursesBooked": len(schedule),
+        "TotalCoursesUnscheduled": len(unscheduled)
+    }
     for (course, room, period) in schedule:
         result["Assignments"].append({
             "Course": course["Course"],
@@ -78,7 +89,8 @@ def schedule_to_json(schedule, unscheduled):
             "Room": room["Room"],
             "RequestedRoomSize": course["RoomsRequested"]["Type"],
             "AssignedRoomSize": room["Type"],
-            "Teacher": course["Teacher"]
+            "Teacher": course["Teacher"],
+            "Status": "Booked"
         })
     
     for course in unscheduled:
