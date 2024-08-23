@@ -2,7 +2,7 @@ import json
 import time
 
 periods = 20
-rooms = 50
+rooms = 10000
 unscheduled_courses_count = 10
 
 room_types = ["Small", "Medium", "Large"]
@@ -76,6 +76,35 @@ def iterative_backtracking_scheduler(courses, rooms, periods):
 
     return schedule, unscheduled
 
+def greedy_approximate_scheduler(courses, rooms, periods):
+    schedule = []
+    unscheduled = []
+
+    available_rooms = {room_type: [] for room_type in room_types}
+    for room in rooms:
+        available_rooms[room["Type"]].append(room)
+
+    room_availability = {period: {room["Type"]: [] for room in rooms} for period in range(periods)}
+    for period in room_availability:
+        for room in rooms:
+            room_availability[period][room["Type"]].append(room)
+
+    for course in courses:
+        assigned = False
+        room_type = course["RoomsRequested"]["Type"]
+        
+        for period in range(periods):
+            if room_availability[period][room_type]:
+                room = room_availability[period][room_type].pop(0)
+                schedule.append((course, room, period))
+                assigned = True
+                break 
+
+        if not assigned:
+            unscheduled.append(course)
+
+    return schedule, unscheduled
+
 def schedule_to_json(schedule, unscheduled):
     result = {
         "Assignments": [],
@@ -106,15 +135,38 @@ def schedule_to_json(schedule, unscheduled):
     
     return result
 
-start_time = time.time()
+print("Escolha o algoritmo para execução:")
+print("1. Exato: Backtracking")
+print("2. Algoritmo Aproximado: Greedy")
 
-exact_schedule, unscheduled_courses = iterative_backtracking_scheduler(dataset["Courses"], dataset["Rooms"], dataset["Periods"])
-exact_schedule_json = schedule_to_json(exact_schedule, unscheduled_courses)
+choice = input("Digite o número da sua escolha (1 ou 2): ")
 
-elapsed_time = time.time() - start_time
+if choice == "1":
+    start_time = time.time()
 
-filename = f"exact_schedule_{elapsed_time:.2f}_seconds.json"
-with open(filename, "w") as json_file:
-    json.dump(exact_schedule_json, json_file, indent=2)
+    exact_schedule, unscheduled_courses = iterative_backtracking_scheduler(dataset["Courses"], dataset["Rooms"], dataset["Periods"])
+    exact_schedule_json = schedule_to_json(exact_schedule, unscheduled_courses)
 
-print(f"Arquivo salvo em {filename}. Tempo de execução: {elapsed_time:.2f} (s)")
+    elapsed_time = time.time() - start_time
+
+    filename = f"exact_schedule_{elapsed_time:.2f}_seconds.json"
+    with open(filename, "w") as json_file:
+        json.dump(exact_schedule_json, json_file, indent=2)
+
+    print(f"Arquivo exato salvo em {filename}. Tempo de execução: {elapsed_time:.2f} (s)")
+
+elif choice == "2":
+    start_time = time.time()
+
+    approximate_schedule, unscheduled_courses_approx = greedy_approximate_scheduler(dataset["Courses"], dataset["Rooms"], dataset["Periods"])
+    approximate_schedule_json = schedule_to_json(approximate_schedule, unscheduled_courses_approx)
+
+    elapsed_time = time.time() - start_time
+    approximate_filename = f"approximate_schedule_{elapsed_time:.2f}_seconds.json"
+    with open(approximate_filename, "w") as json_file:
+        json.dump(approximate_schedule_json, json_file, indent=2)
+
+    print(f"Arquivo aproximado salvo em {approximate_filename}. Tempo de execução: {elapsed_time:.2f} (s)")
+
+else:
+    print("Escolha inválida. Por favor, execute o programa novamente e escolha 1 ou 2.")
