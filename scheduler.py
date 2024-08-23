@@ -1,17 +1,39 @@
 import json
 import time
 
+periods = 20
+rooms = 100
+unscheduled_courses_count = 0
+max_courses = periods * rooms
+
+room_types = ["Small", "Medium", "Large"]
+
+room_list = [
+    {"Room": f"R{i+1}", "Type": room_types[i % len(room_types)]}
+    for i in range(rooms)
+]
+
+room_count_by_type = {room_type: 0 for room_type in room_types}
+for room in room_list:
+    room_count_by_type[room["Type"]] += 1
+
+course_list = []
+course_id = 1
+
+for room_type in room_types:
+    for _ in range((room_count_by_type[room_type] * periods) + unscheduled_courses_count):
+        course_list.append({
+            "Course": f"100{course_id}",
+            "RoomsRequested": {"Type": room_type},
+            "Teacher": f"T{course_id}"
+        })
+        course_id += 1
+
 dataset = {
-    "Courses": [
-        {"Course": f"100{i}", "RoomsRequested": {"Type": "Small" if i % 3 == 0 else "Medium" if i % 3 == 1 else "Large"}, "Teacher": f"T{i}"}
-        for i in range(1, 380)
-    ],
-    "Periods": 20,
-    "Rooms": [
-        {"Room": f"R{i}", "Type": "Small" if i % 3 == 0 else "Medium" if i % 3 == 1 else "Large"}
-        for i in range(1, 21)
-    ],
-    "Teachers": [f"T{i}" for i in range(1, 380)]
+    "Courses": course_list,
+    "Periods": periods,
+    "Rooms": room_list,
+    "Teachers": [f"T{i+1}" for i in range(max_courses)]
 }
 
 def is_valid_assignment(schedule, course, room, period):
@@ -20,30 +42,34 @@ def is_valid_assignment(schedule, course, room, period):
     for assigned_course, assigned_room, assigned_period in schedule:
         if assigned_period == period and assigned_room["Room"] == room["Room"]:
             return False
-    
     return True
 
-def backtracking_scheduler(courses, rooms, periods, schedule=[], depth=0, counter={"attempts": 0}):
-    if len(schedule) == len(courses):
-        return schedule
-    
-    course = courses[len(schedule)]
+def iterative_backtracking_scheduler(courses, rooms, periods):
+    schedule = []
+    unscheduled = []
+    course_index = 0  
 
-    for period in range(periods):
-        for room in rooms:
-            if is_valid_assignment(schedule, course, room, period):                
-                counter["attempts"] += 1
-                
-                schedule.append((course, room, period))
-                
-                result = backtracking_scheduler(courses, rooms, periods, schedule, depth+1, counter)
-                if result:
-                    return result
-                
-                schedule.pop()
-    return None
+    while course_index < len(courses):
+        course = courses[course_index]
+        found_valid_assignment = False
 
-def schedule_to_json(schedule):
+        for period in range(periods):
+            for room in rooms:
+                if is_valid_assignment(schedule, course, room, period):
+                    schedule.append((course, room, period))
+                    found_valid_assignment = True
+                    break  
+            if found_valid_assignment:
+                break 
+
+        if not found_valid_assignment:
+            unscheduled.append(course)
+        
+        course_index += 1
+
+    return schedule, unscheduled
+
+def schedule_to_json(schedule, unscheduled):
     result = {"Assignments": []}
     for (course, room, period) in schedule:
         result["Assignments"].append({
@@ -54,12 +80,24 @@ def schedule_to_json(schedule):
             "AssignedRoomSize": room["Type"],
             "Teacher": course["Teacher"]
         })
+    
+    for course in unscheduled:
+        result["Assignments"].append({
+            "Course": course["Course"],
+            "Period": "N/A",
+            "Room": "N/A",
+            "RequestedRoomSize": course["RoomsRequested"]["Type"],
+            "AssignedRoomSize": "N/A",
+            "Teacher": course["Teacher"],
+            "Status": "Not available room"
+        })
+    
     return result
 
 start_time = time.time()
 
-exact_schedule = backtracking_scheduler(dataset["Courses"], dataset["Rooms"], dataset["Periods"])
-exact_schedule_json = schedule_to_json(exact_schedule) if exact_schedule else {"Assignments": []}
+exact_schedule, unscheduled_courses = iterative_backtracking_scheduler(dataset["Courses"], dataset["Rooms"], dataset["Periods"])
+exact_schedule_json = schedule_to_json(exact_schedule, unscheduled_courses)
 
 elapsed_time = time.time() - start_time
 
@@ -68,8 +106,3 @@ with open(filename, "w") as json_file:
     json.dump(exact_schedule_json, json_file, indent=2)
 
 print(f"Arquivo salvo em {filename}. Tempo de execução: {elapsed_time:.2f} (s)")
-
-#approximate_schedule = greedy_scheduler(dataset["Courses"], dataset["Rooms"], dataset["Periods"])
-#approximate_schedule_json = schedule_to_json(approximate_schedule)
-
-#print("Aproximativo:", json.dumps(approximate_schedule_json, indent=2))
